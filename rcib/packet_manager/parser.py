@@ -2,6 +2,7 @@ import re
 from typing import List
 from operator import itemgetter
 from icecream import ic
+from rcib.packet_manager.packet import Packet
 
 
 class Parser:
@@ -32,7 +33,7 @@ class Parser:
         return list(map(itemgetter(0), order))
 
     def _prepared_pattern(self, pattern: str) -> str:
-        word = r'([\-\\w\\d\[\].\(\)]+)'
+        word = r'([:\-\\w\\d\[\].\(\)]+)'
         line = r'([^\n]+)'
         space = r'\\s*'
 
@@ -76,3 +77,6 @@ class Parser:
                 self.tree[-1][key] += value.rstrip()
 
             self.tree[-1]['installed'] = True if self.tree[-1]['installed'] else False
+
+    def to_packets(self) -> List[Packet]:
+        return [Packet(**p) for p in self.tree]

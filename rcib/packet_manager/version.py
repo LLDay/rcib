@@ -6,6 +6,7 @@ class Version:
     def __init__(self, version: Union[int, str, List[Union[int, str]]]):
         if isinstance(version, str):
             version = version.replace('-', '.')
+            version = version.replace(':', '.')
             self._version = version.split('.')
 
         elif isinstance(version, int):
@@ -57,4 +58,4 @@ class Version:
             return False
 
     def __str__(self):
-        return '.'.join(self._version)
+        return '.'.join(str(v) for v in self._version)

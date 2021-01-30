@@ -1,11 +1,14 @@
-import rcib.packet_manager.packet as packet
 import unittest
 from icecream import ic
+from rcib.packet_manager.parser import Parser
+from rcib.packet_manager.packet import Packet
 
 
 class PacketTest(unittest.TestCase):
     def get_packet(self, pattern: str, string: str) -> 'Packet':
-        return packet.Packet.parsed_packets(pattern, string)[0]
+        parser = Parser()
+        parser.parse(pattern, string)
+        return parser.to_packets()[0]
 
     def test_parse(self):
         p = self.get_packet('[n] [v]', 'name 1')
@@ -47,11 +50,11 @@ class PacketTest(unittest.TestCase):
         self.assertTrue(p.installed)
 
     def test_comparing(self):
-        p1 = packet.Packet(name='name', repository='repo', version='1.2.3')
-        p2 = packet.Packet(name='other', repository='repo', version='1.2.3')
-        p3 = packet.Packet(name='name', repository='repo', version='1.2.3.4')
-        p4 = packet.Packet(name='name', version='1.2.3',
-                           description='description')
+        p1 = Packet(name='name', repository='repo', version='1.2.3')
+        p2 = Packet(name='other', repository='repo', version='1.2.3')
+        p3 = Packet(name='name', repository='repo', version='1.2.3.4')
+        p4 = Packet(name='name', version='1.2.3',
+                    description='description')
 
         self.assertEqual(p1, p4)
         self.assertNotEqual(p1, p2)
