@@ -13,9 +13,12 @@ class PacketManager(BasePacketManager):
             raise EnvironmentError("No available packet managers")
 
     def get_available_packet_managers(self) -> List[BasePacketManager]:
-        pm_dict = {'pacman': PacmanPacketManager}
-        pm_list = []
+        pm_dict = {}
+        for cls in PacketManagerAdaptor.__subclasses__():
+            for name in cls.alias:
+                pm_dict[name] = cls
 
+        pm_list = []
         for k in pm_dict:
             if executable_exists(k):
                 pm_list.append(pm_dict[k](k))
