@@ -11,22 +11,23 @@ import re
 
 class PacketManagerAdaptor(BasePacketManager):
     def __init__(self):
-        self.util_name = ""
-        self.install_prefix = ""
-        self.install_suffix = ""
-        self.delete_prefix = ""
-        self.delete_suffix = ""
+        self.util_name = ''
+        self.install_prefix = ''
+        self.install_suffix = ''
+        self.delete_prefix = ''
+        self.delete_suffix = ''
 
-        self.version_suffix = ""
-        self.version_pattern = ""
+        self.version_suffix = ''
+        self.version_pattern = ''
 
-        self.search_prefix = ""
-        self.search_suffix = ""
-        self.search_pattern = ""
+        self.search_prefix = ''
+        self.search_suffix = ''
+        self.search_pattern = ''
+        self.search_installed_sign = ''
 
-        self.installed_prefix = ""
-        self.installed_suffix = ""
-        self.installed_pattern = ""
+        self.installed_prefix = ''
+        self.installed_suffix = ''
+        self.installed_pattern = ''
 
     def _run_command(self, *args) -> Tuple[int, List[str]]:
         command = [self.name]
@@ -70,7 +71,8 @@ class PacketManagerAdaptor(BasePacketManager):
             self.search_prefix, packet_name, self.search_suffix)
         if result[0] == 0:
             parser = Parser()
-            parser.parse(self.search_pattern, result[1])
+            parser.parse(self.search_pattern,
+                         result[1], self.search_installed_sign)
             packets = parser.to_packets()
             for packet in packets:
                 packet.pm = self.name

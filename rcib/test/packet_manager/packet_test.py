@@ -5,9 +5,9 @@ from rcib.packet_manager.packet import Packet
 
 
 class PacketTest(unittest.TestCase):
-    def get_packet(self, pattern: str, string: str) -> 'Packet':
+    def get_packet(self, pattern: str, string: str, installed_sign='') -> 'Packet':
         parser = Parser()
-        parser.parse(pattern, string)
+        parser.parse(pattern, string, installed_sign)
         return parser.to_packets()[0]
 
     def test_parse(self):
@@ -22,12 +22,12 @@ class PacketTest(unittest.TestCase):
         p = self.get_packet('[n] [n]', 'name1 name2')
         self.assertEqual(p.name, 'name1 name2')
 
-        p = self.get_packet('[N] [d] [o]',
+        p = self.get_packet('[N] \n [d] [o]',
                             'Long name \n description other')
         self.assertEqual(p.name, 'Long name')
         self.assertEqual(p.description, 'description')
 
-        p = self.get_packet('[o] [N] [D]',
+        p = self.get_packet('[o] [N] \n [D]',
                             'other name \n full description')
         self.assertEqual(p.name, 'name')
         self.assertEqual(p.description, 'full description')
@@ -36,16 +36,16 @@ class PacketTest(unittest.TestCase):
         self.assertEqual(p.name, 'name')
         self.assertEqual(p.repository, 'repo')
 
-        pattern = '[n] [o]? [i]installed[s]?'
-        p = self.get_packet(pattern, 'name')
+        pattern = '[n] [O]?'
+        p = self.get_packet(pattern, 'name', 'installed')
         self.assertEqual(p.name, 'name')
         self.assertFalse(p.installed)
 
-        p = self.get_packet(pattern, 'name other')
+        p = self.get_packet(pattern, 'name other', 'installed')
         self.assertEqual(p.name, 'name')
         self.assertFalse(p.installed)
 
-        p = self.get_packet(pattern, 'name other installed')
+        p = self.get_packet(pattern, 'name other installed', 'installed')
         self.assertEqual(p.name, 'name')
         self.assertTrue(p.installed)
 

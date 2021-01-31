@@ -9,14 +9,14 @@ class Pacman(PacketManagerAdaptor):
 
     def __init__(self, name: str):
         super().__init__()
-        installed = '[i][installed][s]?'
         self.util_name = name
         self.install_prefix = '-S'
         self.install_suffix = '--noconfirm'
         self.delete_prefix = '-Rsn'
         self.delete_suffix = '--noconfirm'
         self.search_prefix = '-Ss'
-        self.search_pattern = f'[r]/[n] [v] {installed} [o]? {installed}\n[D]'
+        self.search_pattern = f'[r]/[n] [v] [O]? \n [D]'
+        self.search_installed_sign = '[installed]'
 
     @property
     def supports_versioning(self) -> bool:
