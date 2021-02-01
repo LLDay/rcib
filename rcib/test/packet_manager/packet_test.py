@@ -36,7 +36,7 @@ class PacketTest(unittest.TestCase):
         self.assertEqual(p.name, 'name')
         self.assertEqual(p.repository, 'repo')
 
-        pattern = '[n] [O]?'
+        pattern = '[n] [I]?'
         p = self.get_packet(pattern, 'name', 'installed')
         self.assertEqual(p.name, 'name')
         self.assertFalse(p.installed)

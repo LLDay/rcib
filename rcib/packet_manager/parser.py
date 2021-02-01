@@ -8,7 +8,7 @@ from rcib.packet_manager.packet import Packet
 class Parser:
     def __init__(self):
         self.marks = {'repository': '[r]', 'name': '[n]', 'version': '[v]',
-                      'description': '[d]', 'other': '[o]'}
+                      'installed': '[i]', 'description': '[d]', 'other': '[o]'}
         self.tree = []
 
     def __len__(self):
@@ -71,9 +71,8 @@ class Parser:
                     self.tree[-1][key] += ' '
                 self.tree[-1][key] += value.rstrip()
 
-            if installed_sign:
-                self.tree[-1]['installed'] = self.tree[-1]['other'].find(
-                    installed_sign) >= 0
+            self.tree[-1]['installed'] = len(installed_sign) > 0 and self.tree[-1]['installed'].find(
+                installed_sign) >= 0
 
     def to_packets(self) -> List[Packet]:
         return [Packet(**p) for p in self.tree]
