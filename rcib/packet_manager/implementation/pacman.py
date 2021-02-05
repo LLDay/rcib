@@ -10,17 +10,23 @@ class Pacman(PacketManagerAdaptor):
     def __init__(self, name: str):
         super().__init__()
         self.util_name = name
+
         self.install_prefix = '-S'
         self.install_suffix = '--noconfirm'
+
         self.delete_prefix = '-Rsn'
         self.delete_suffix = '--noconfirm'
+
         self.search_prefix = '-Ss'
-        self.search_pattern = f'[r]/[n] [v] [O]? \n [D]'
-        self.search_installed_sign = '[installed]'
+        self.search_pattern = '[r]/[n] [v] [I]?\n[D]'
+        self.installed_sign = '[installed]'
+
+        self.local_search_prefix = '-Qs'
+        self.local_search_pattern = '[r]/[n] [v] [O]?\n[D]'
+
+        self.local_packages_args = '-Qs'
+        self.local_packages_pattern = '[r]/[n] [v] [O]?\n[D]'
 
     @property
     def supports_versioning(self) -> bool:
         return False
-
-    def is_installed(self, packet: str) -> bool:
-        return self._run_command('-Qk', packet)[0] == 0

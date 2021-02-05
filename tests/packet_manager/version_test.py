@@ -18,8 +18,13 @@ class VersionTest(unittest.TestCase):
         v3 = Version('1.2.3-hefc')
         v4 = Version(2)
         v5 = Version('2.0')
+        v6 = Version()
+
         self.assertGreater(v2, v1)
         self.assertGreater(v4, v1)
         self.assertGreater(v4, v2)
         self.assertNotEqual(v3, v2)
         self.assertEqual(v4, v5)
+
+        for v in [v1, v2, v3, v4, v5, v6]:
+            self.assertEqual(v6, v)

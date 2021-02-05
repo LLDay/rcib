@@ -1,7 +1,7 @@
 import unittest
 from icecream import ic
 from rcib.packet_manager.parser import Parser
-from rcib.packet_manager.packet import Packet
+from rcib.packet_manager.packet import Packet, PacketStatus
 
 
 class PacketTest(unittest.TestCase):
@@ -35,19 +35,20 @@ class PacketTest(unittest.TestCase):
         p = self.get_packet('[r]/[n]', 'repo/name')
         self.assertEqual(p.name, 'name')
         self.assertEqual(p.repository, 'repo')
+        self.assertEqual(p.installed, PacketStatus.UNDEFINED)
 
         pattern = '[n] [I]?'
         p = self.get_packet(pattern, 'name', 'installed')
         self.assertEqual(p.name, 'name')
-        self.assertFalse(p.installed)
+        self.assertEqual(p.installed, PacketStatus.UNINSTALLED)
 
         p = self.get_packet(pattern, 'name other', 'installed')
         self.assertEqual(p.name, 'name')
-        self.assertFalse(p.installed)
+        self.assertEqual(p.installed, PacketStatus.UNINSTALLED)
 
         p = self.get_packet(pattern, 'name other installed', 'installed')
         self.assertEqual(p.name, 'name')
-        self.assertTrue(p.installed)
+        self.assertEqual(p.installed, PacketStatus.INSTALLED)
 
     def test_comparing(self):
         p1 = Packet(name='name', repository='repo', version='1.2.3')
@@ -55,8 +56,20 @@ class PacketTest(unittest.TestCase):
         p3 = Packet(name='name', repository='repo', version='1.2.3.4')
         p4 = Packet(name='name', version='1.2.3',
                     description='description')
+        p5 = Packet(name='name')
+        p6 = Packet()
+        p7 = Packet(version='1.2.3')
 
         self.assertEqual(p1, p4)
+        self.assertEqual(p1, p5)
         self.assertNotEqual(p1, p2)
         self.assertNotEqual(p1, p3)
         self.assertNotEqual(p2, p3)
+        self.assertNotEqual(p2, p5)
+
+        for p in [p1, p2, p3, p4, p5, p6, p7]:
+            self.assertEqual(p6, p)
+
+        for p in [p1, p2, p4, p5, p6, p7]:
+            self.assertEqual(p7, p)
+        self.assertNotEqual(p7, p4)

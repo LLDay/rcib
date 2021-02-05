@@ -1,0 +1,22 @@
+version: "3"
+services:
+    pacman:
+        image: "archlinux"
+        stdin_open: true
+        tty: true
+        container_name: "pacman"
+        working_dir: "/rcib"
+        volumes:
+            - type: bind
+              source: .
+              target: "/rcib"
+    apt:
+        image: "ubuntu"
+        stdin_open: true
+        tty: true
+        container_name: "apt"
+        working_dir: "/rcib"
+        volumes:
+            - type: bind
+              source: .
+              target: "/rcib"

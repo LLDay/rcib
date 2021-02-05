@@ -1,40 +1,78 @@
 from .base_packet_manager import BasePacketManager
-from .packet import Packet
+from .packet import Packet, PacketStatus
 from .parser import Parser
 from .version import Version
-from typing import List, Tuple
-from subprocess import run, PIPE
+from typing import List, Tuple, Union
 from icecream import ic
 
+import subprocess
+import pdb
 import re
 
 
 class PacketManagerAdaptor(BasePacketManager):
     def __init__(self):
         self.util_name = ''
+        self.use_util_name_in_command = True
+
         self.install_prefix = ''
         self.install_suffix = ''
+
         self.delete_prefix = ''
         self.delete_suffix = ''
 
-        self.version_suffix = ''
-        self.version_pattern = ''
+        self.pm_version_args = ''
+        self.pm_version_pattern = None
 
         self.search_prefix = ''
         self.search_suffix = ''
         self.search_pattern = ''
-        self.search_installed_sign = ''
+        self.installed_sign = None
 
-        self.installed_prefix = ''
-        self.installed_suffix = ''
-        self.installed_pattern = ''
+        self.local_search_prefix = ''
+        self.local_search_suffix = ''
+        self.local_search_pattern = None
 
-    def _run_command(self, *args) -> Tuple[int, List[str]]:
-        command = [self.name]
-        command.extend(args)
-        result = run(command, capture_output=True,
-                     text=True, shell=False, check=False)
-        return result.returncode, result.stdout.rstrip()
+        self.local_packages_args = ''
+        self.local_packages_pattern = None
+
+        self.packet_vesion_prefix = ''
+        self.packet_version_suffix = ''
+        self.packet_version_pattern = None
+
+    def _run_command(self, *args) -> subprocess.CompletedProcess:
+        use_util_name_in_command = self._specific_attribute(
+            'use_util_name_in_command')
+
+        command = [self.name] if use_util_name_in_command else []
+        for arg in args:
+            command.extend(arg.split())
+
+        result = subprocess.run(command, capture_output=True,
+                                text=True, shell=False, check=False)
+        result.stdout = result.stdout.rstrip()
+        return result
+
+    def _convert_to_packet(self, packet: Union[Packet, str]) -> Packet:
+        if isinstance(packet, str):
+            return Packet(name=packet)
+        return packet
+
+    def _specific_attribute(self, attribute: str):
+        specific_attribute = self.name + '_' + attribute
+        return getattr(self, specific_attribute) if hasattr(self, specific_attribute) else getattr(self, attribute)
+
+    def _parsed_packets(self, pattern, *args) -> List[Packet]:
+        installed_sign = self._specific_attribute('installed_sign')
+        result = self._run_command(*args)
+        if result.returncode == 0:
+            parser = Parser()
+            parser.parse(pattern, result.stdout, installed_sign)
+            packets = parser.to_packets()
+            for packet in packets:
+                packet.pm = self.name
+            return packets
+        return []
 
     @property
     def name(self) -> str:
@@ -44,36 +82,55 @@ class PacketManagerAdaptor(BasePacketManager):
     def version(self) -> Version:
         output = self._run_command(self.version_suffix)
 
-    def _install_call(self, packet_name: str) -> Tuple[int, List[str]]:
-        return self._run_command(self.install_prefix, packet_name, self.install_suffix)
-
-    def install(self, packet: Packet) -> bool:
-        return self._install_call(packet.name)[0] == 0
-
-    def _delete_call(self, packet_name: str) -> Tuple[int, List[str]]:
-        return self._run_command(self.delete_prefix, packet_name, self.delete_suffix)
-
-    def delete(self, packet_name: str) -> bool:
-        return self._delete_call(packet_name)[0] == 0
-
-    def is_exists(self, packet_name: str) -> bool:
-        found_packets = self.search(packet_name)
-        if packet_name in found_packets:
-            return True
-        return False
-
-    def is_installed(self, packet_name: str):
+    def install(self, packet: Union[Packet, str]) -> bool:
+        packet = self._convert_to_packet(packet)
         result = self._run_command(
-            self.install_prefix, packet_name, self.install_suffix)
+            self.install_prefix, packet.name, self.install_suffix)
+        return result.returncode == 0
 
-    def search(self, packet_name: str) -> List[Packet]:
+    def delete(self, packet: Union[Packet, str]) -> bool:
+        packet = self._convert_to_packet(packet)
         result = self._run_command(
-            self.search_prefix, packet_name, self.search_suffix)
-        if result[0] == 0:
-            parser = Parser()
-            parser.parse(self.search_pattern,
-                         result[1], self.search_installed_sign)
-            packets = parser.to_packets()
-            for packet in packets:
-                packet.pm = self.name
-            return packets
+            self.delete_prefix, packet.name, self.delete_suffix)
+        return result.returncode == 0
+
+    def version_of(self, packet: Union[Packet, str]) -> Version:
+        packet = self._convert_to_packet(packet)
+        version_pattern = self._specific_attribute('version_pattern')
+        packets = self._parsed_packets(
+            version_pattern, self.packet_vesion_prefix, packet.name, self.packet_version_suffix)
+
+        if len(packets) > 1:
+            raise RuntimeError('Function must return one version')
+
+        if len(packets) == 1:
+            return packets[0].version
+        return Version()
+
+    def is_installed(self, packet: Union[Packet, str]) -> bool:
+        packet = self._convert_to_packet(packet)
+        if self.local_search_pattern is not None:
+            packets = self.local_search(packet)
+        else:
+            packets = self.local_packages()
+        return packet in packets
+
+    def search(self, packet: Union[Packet, str]) -> List[Packet]:
+        packet = self._convert_to_packet(packet)
+        search_pattern = self._specific_attribute('search_pattern')
+        return self._parsed_packets(search_pattern, self.search_prefix, packet.name, self.search_suffix)
+
+    def local_search(self, packet: Union[Packet, str]) -> List[Packet]:
+        packet = self._convert_to_packet(packet)
+        search_pattern = self._specific_attribute('local_search_pattern')
+        packets = self._parsed_packets(
+            search_pattern, self.local_search_prefix, packet.name, self.local_search_suffix)
+
+        for packet in packets:
+            packet.installed = PacketStatus.INSTALLED
+
+        return packets
+
+    def local_packages(self) -> List[Packet]:
+        pattern = self._specific_attribute('local_packages_pattern')
+        return self._parsed_packets(pattern, self.local_packages_args)

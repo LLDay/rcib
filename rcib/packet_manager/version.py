@@ -3,11 +3,14 @@ from icecream import ic
 
 
 class Version:
-    def __init__(self, version: Union[int, str, List[Union[int, str]]]):
+    def __init__(self, version: Union[int, str, List[Union[int, str]]] = ''):
         if isinstance(version, str):
-            version = version.replace('-', '.')
-            version = version.replace(':', '.')
-            self._version = version.split('.')
+            if len(version) == 0:
+                self._version = []
+            else:
+                version = version.replace('-', '.')
+                version = version.replace(':', '.')
+                self._version = version.split('.')
 
         elif isinstance(version, int):
             self._version = [version]
@@ -30,18 +33,22 @@ class Version:
                 self._version[i] = int(part)
 
     def _allignment(self, other) -> Tuple[List, List]:
-        this_version = Version(self)
-        other_version = Version(other)
+        this = Version(self)
+        other = Version(other)
+
+        if len(this._version) == 0 or len(other._version) == 0:
+            return [], []
+
         max_size = max(
-            map(len, (this_version._version, other_version._version)))
+            map(len, (this._version, other._version)))
 
-        this_len = len(this_version._version)
-        other_len = len(other_version._version)
+        this_len = len(this._version)
+        other_len = len(other._version)
 
-        this_version._version.extend([0] * (max_size - this_len))
-        other_version._version.extend([0] * (max_size - other_len))
+        this._version.extend([0] * (max_size - this_len))
+        other._version.extend([0] * (max_size - other_len))
 
-        return this_version._version, other_version._version
+        return this._version, other._version
 
     def __eq__(self, other):
         try:

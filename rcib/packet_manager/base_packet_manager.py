@@ -1,6 +1,6 @@
 import abc
 
-from typing import List
+from typing import List, Union
 from .packet import Packet
 from rcib.packet_manager.version import Version
 
@@ -21,34 +21,30 @@ class BasePacketManager(metaclass=abc.ABCMeta):
     def supports_versioning(self) -> bool:
         pass
 
-    def preinstall_hook(self):
+    @abc.abstractmethod
+    def install(self, packet: Union[Packet, str]) -> bool:
         pass
 
     @abc.abstractmethod
-    def install(self, packet: Packet) -> bool:
-        pass
-
-    def postinstall_hook(self):
-        pass
-
-    def predelete_hook(self):
+    def delete(self, packet: Union[Packet, str]) -> bool:
         pass
 
     @abc.abstractmethod
-    def delete(self, packet_name: str) -> bool:
-        pass
-
-    def postdelete_hook(self):
+    def search(self, packet: Union[Packet, str]) -> List[Packet]:
         pass
 
     @abc.abstractmethod
-    def is_exists(self, packet: Packet) -> bool:
+    def local_search(self, packet: Union[Packet, str]) -> List[Packet]:
         pass
 
     @abc.abstractmethod
-    def is_installed(self, packet_name: str) -> bool:
+    def local_packages(self) -> List[Packet]:
         pass
 
     @abc.abstractmethod
-    def search(self, packet_name: str) -> List[Packet]:
+    def version_of(self, packet: Union[Packet, str]) -> Version:
+        pass
+
+    @abc.abstractmethod
+    def is_installed(self, packet: Union[Packet, str]) -> bool:
         pass

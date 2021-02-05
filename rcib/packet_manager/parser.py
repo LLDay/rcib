@@ -2,7 +2,7 @@ import re
 from typing import List
 from operator import itemgetter
 from icecream import ic
-from rcib.packet_manager.packet import Packet
+from rcib.packet_manager.packet import Packet, PacketStatus
 
 
 class Parser:
@@ -33,15 +33,16 @@ class Parser:
         return list(map(itemgetter(0), order))
 
     def _prepared_pattern(self, pattern: str) -> str:
-        word = r'[ \t]*([:\-\\w\\d\[\].\(\)]+)'
-        line = r'[ \t]*([^\n]+)'
+        word = r'([^\\s]+)'
+        line = r'([^\n]+)'
 
         pattern = pattern.replace('/', r'\/')
         pattern = pattern.replace('(', r'\(')
         pattern = pattern.replace(')', r'\)')
         pattern = re.sub('\\[(?!.\\])', r'\[', pattern)
         pattern = re.sub('(?<!\\[.)\\]', r'\]', pattern)
-        pattern = re.sub('[ \t]+', '', pattern)
+        pattern = re.sub('[ \t]+', '[ \t]*', pattern)
+        pattern = pattern.replace('[S]', r'(?:[^\n]*\n)+?')
 
         marks_list = list(s.replace('[', '\\[').replace(']', '\\]')
                           for s in self.marks.values())
@@ -50,6 +51,7 @@ class Parser:
         return pattern
 
     def parse(self, pattern: str, string: str, installed_sign=''):
+        has_install = '[i]' in pattern.lower()
         order = self._marks_order(pattern)
         pattern = self._prepared_pattern(pattern)
         found = re.findall(pattern, string.rstrip(), re.MULTILINE)
@@ -57,22 +59,32 @@ class Parser:
         if not found:
             raise ValueError("Wrong pattern or string")
 
+        if has_install and (installed_sign is None or len(installed_sign) == 0):
+            raise ValueError("Installed sign is not specified")
+
         if isinstance(found, str):
             found = [found]
 
         for result in found:
             self.tree.append(dict())
-
             for key in self.marks:
                 self.tree[-1][key] = str()
+
+            if isinstance(result, str):
+                result = [result]
 
             for key, value in zip(order, result):
                 if self.tree[-1][key]:
                     self.tree[-1][key] += ' '
-                self.tree[-1][key] += value.rstrip()
+                self.tree[-1][key] += value.strip()
 
-            self.tree[-1]['installed'] = len(installed_sign) > 0 and self.tree[-1]['installed'].find(
-                installed_sign) >= 0
+        if not has_install:
+            installed = PacketStatus.UNDEFINED
+        elif self.tree[-1]['installed'].find(installed_sign) >= 0:
+            installed = PacketStatus.INSTALLED
+        else:
+            installed = PacketStatus.UNINSTALLED
+        self.tree[-1]['installed'] = installed
 
     def to_packets(self) -> List[Packet]:
         return [Packet(**p) for p in self.tree]
