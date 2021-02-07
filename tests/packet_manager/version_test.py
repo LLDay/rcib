@@ -25,6 +25,7 @@ class VersionTest(unittest.TestCase):
         self.assertGreater(v4, v2)
         self.assertNotEqual(v3, v2)
         self.assertEqual(v4, v5)
+        self.assertEqual(v6, v6)
 
-        for v in [v1, v2, v3, v4, v5, v6]:
-            self.assertEqual(v6, v)
+        for v in [v1, v2, v3, v4, v5]:
+            self.assertNotEqual(v6, v)

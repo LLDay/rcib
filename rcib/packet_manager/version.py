@@ -36,9 +36,6 @@ class Version:
         this = Version(self)
         other = Version(other)
 
-        if len(this._version) == 0 or len(other._version) == 0:
-            return [], []
-
         max_size = max(
             map(len, (this._version, other._version)))
 

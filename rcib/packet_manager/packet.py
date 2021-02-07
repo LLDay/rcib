@@ -20,11 +20,19 @@ class Packet:
         self.pm = kwargs.get('pm', pm)
 
     def __eq__(self, other) -> bool:
+        if isinstance(other, str):
+            other = Packet(name=other)
+
         if not isinstance(other, Packet):
             return False
-        names_are_equal = len(self.name) == 0 or len(
-            other.name) == 0 or self.name == other.name
-        return names_are_equal and self.version == other.version
+
+        self_len = len(self.name)
+        other_len = len(other.name)
+        empty_version = Version()
+
+        names_are_equal = self_len == 0 or other_len == 0 or self.name == other.name
+        versions_are_equal = self.version == empty_version or other.version == empty_version or self.version == other.version
+        return names_are_equal and versions_are_equal
 
     def __ne__(self, other) -> bool:
         if not isinstance(other, Packet):

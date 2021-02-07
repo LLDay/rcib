@@ -41,10 +41,9 @@ class PacketManagerAdaptor(BasePacketManager):
         self.packet_version_pattern = None
 
     def _run_command(self, *args) -> subprocess.CompletedProcess:
-        use_util_name_in_command = self._specific_attribute(
-            'use_util_name_in_command')
+        use_name = self._specific_attribute('use_util_name_in_command')
 
-        command = [self.name] if use_util_name_in_command else []
+        command = [self.name] if use_name else []
         for arg in args:
             command.extend(arg.split())
 
@@ -104,7 +103,9 @@ class PacketManagerAdaptor(BasePacketManager):
             raise RuntimeError('Function must return one version')
 
         if len(packets) == 1:
-            return packets[0].version
+            version = packets[0].version
+            packet.verson = vesion
+            return version
         return Version()
 
     def is_installed(self, packet: Union[Packet, str]) -> bool:
@@ -113,7 +114,12 @@ class PacketManagerAdaptor(BasePacketManager):
             packets = self.local_search(packet)
         else:
             packets = self.local_packages()
-        return packet in packets
+
+        for p in packets:
+            if p == packet:
+                packet.installed = p.installed
+                return True
+        return False
 
     def search(self, packet: Union[Packet, str]) -> List[Packet]:
         packet = self._convert_to_packet(packet)
@@ -133,4 +139,6 @@ class PacketManagerAdaptor(BasePacketManager):
 
     def local_packages(self) -> List[Packet]:
         pattern = self._specific_attribute('local_packages_pattern')
+        if pattern is None:
+            raise RuntimeError('Not specified pattern of local search')
         return self._parsed_packets(pattern, self.local_packages_args)
